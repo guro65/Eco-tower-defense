@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class SelecionadorGlobal : MonoBehaviour
@@ -22,6 +22,7 @@ public class SelecionadorGlobal : MonoBehaviour
 
             if (hit.collider != null)
             {
+                // 🔹 Somente pega o Personagem se estiver no mesmo GameObject
                 Personagem personagem = hit.collider.GetComponent<Personagem>();
 
                 if (personagem != null)

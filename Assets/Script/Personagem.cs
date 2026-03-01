@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 [RequireComponent(typeof(BoxCollider2D))]
 public class Personagem : MonoBehaviour
@@ -15,33 +16,118 @@ public class Personagem : MonoBehaviour
     [SerializeField] private string tagRange = "RangeVisual";
 
     private SpriteRenderer rangeSprite;
-    private float tempoProximoAtaque;
+    private CircleCollider2D colliderRange;
     private float ultimoAlcance;
 
     private static Personagem personagemSelecionado;
 
+    // Controle de inimigos e cooldown individual
+    private Dictionary<Inimigo, float> inimigosCooldown = new Dictionary<Inimigo, float>();
+
     private void Awake()
     {
+        // 🔹 Pega o collider da range (não o BoxCollider2D do personagem)
+        colliderRange = GetComponent<CircleCollider2D>();
+        if (colliderRange == null)
+        {
+            colliderRange = gameObject.AddComponent<CircleCollider2D>();
+        }
+        colliderRange.isTrigger = true;
+        colliderRange.radius = alcance;
+
         EncontrarRangeDoFilho();
 
+        // Range invisível por padrão, collider ativo
         if (rangeSprite != null)
         {
-            rangeSprite.gameObject.SetActive(false);
+            rangeSprite.enabled = false;
             AtualizarRangeVisual();
-            ultimoAlcance = alcance;
         }
+
+        ultimoAlcance = alcance;
     }
 
     private void Update()
     {
-        tempoProximoAtaque -= Time.deltaTime;
+        AtualizarStatusDinamicos();
+        AtualizarCooldowns();
+        TentarAtacarTodos();
+    }
 
-        if (alcance != ultimoAlcance)
+    // ================= ATAQUE =================
+
+    private void TentarAtacarTodos()
+    {
+        List<Inimigo> inimigosParaAtacar = new List<Inimigo>(inimigosCooldown.Keys);
+
+        foreach (Inimigo inimigo in inimigosParaAtacar)
         {
-            AtualizarRangeVisual();
-            ultimoAlcance = alcance;
+            if (inimigo == null)
+            {
+                inimigosCooldown.Remove(inimigo);
+                continue;
+            }
+
+            if (PodeAtacar(inimigo))
+            {
+                Atacar(inimigo);
+                inimigosCooldown[inimigo] = tempoEntreAtaques; // reset cooldown
+            }
         }
     }
+
+    private void Atacar(Inimigo inimigo)
+    {
+        if (inimigo == null)
+            return;
+
+        inimigo.ReceberDano(dano);
+        Debug.Log(nomePersonagem + " causou " + dano + " de dano em " + inimigo.name);
+    }
+
+    private bool PodeAtacar(Inimigo inimigo)
+    {
+        if (!inimigosCooldown.ContainsKey(inimigo))
+        {
+            inimigosCooldown[inimigo] = 0f;
+            return true;
+        }
+
+        return inimigosCooldown[inimigo] <= 0f;
+    }
+
+    private void AtualizarCooldowns()
+    {
+        List<Inimigo> keys = new List<Inimigo>(inimigosCooldown.Keys);
+        foreach (Inimigo inimigo in keys)
+        {
+            inimigosCooldown[inimigo] -= Time.deltaTime;
+            if (inimigo == null)
+                inimigosCooldown.Remove(inimigo);
+        }
+    }
+
+    // ================= DETECÇÃO =================
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        Inimigo inimigo = other.GetComponent<Inimigo>();
+        if (inimigo != null && !inimigosCooldown.ContainsKey(inimigo))
+        {
+            inimigosCooldown.Add(inimigo, 0f); // pronto para atacar
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        Inimigo inimigo = other.GetComponent<Inimigo>();
+        if (inimigo != null && inimigosCooldown.ContainsKey(inimigo))
+        {
+            inimigosCooldown.Remove(inimigo);
+        }
+    }
+
+    // ================= SELEÇÃO =================
 
     public void Selecionar()
     {
@@ -53,13 +139,16 @@ public class Personagem : MonoBehaviour
         personagemSelecionado = this;
 
         if (rangeSprite != null)
-            rangeSprite.gameObject.SetActive(true);
+        {
+            rangeSprite.enabled = true; // aparece para o jogador
+            AtualizarRangeVisual();    // garante que a escala esteja correta
+        }
     }
 
     public void Desselecionar()
     {
         if (rangeSprite != null)
-            rangeSprite.gameObject.SetActive(false);
+            rangeSprite.enabled = false;
 
         if (personagemSelecionado == this)
             personagemSelecionado = null;
@@ -70,6 +159,8 @@ public class Personagem : MonoBehaviour
         if (personagemSelecionado != null)
             personagemSelecionado.Desselecionar();
     }
+
+    // ================= RANGE VISUAL =================
 
     private void EncontrarRangeDoFilho()
     {
@@ -95,25 +186,58 @@ public class Personagem : MonoBehaviour
         rangeSprite.transform.localScale = new Vector3(escalaFinal, escalaFinal, 1f);
     }
 
-    public bool PodeAtacar()
-    {
-        return tempoProximoAtaque <= 0f;
-    }
+    // ================= DETECÇÃO DINÂMICA DE INIMIGOS =================
 
-    public void Atacar()
+    private void DetectarInimigosDentroDoRange()
     {
-        if (PodeAtacar())
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, alcance);
+        foreach (Collider2D hit in hits)
         {
-            Debug.Log(nomePersonagem + " causou " + dano + " de dano.");
-            tempoProximoAtaque = tempoEntreAtaques;
+            Inimigo inimigo = hit.GetComponent<Inimigo>();
+            if (inimigo != null && !inimigosCooldown.ContainsKey(inimigo))
+            {
+                inimigosCooldown.Add(inimigo, 0f);
+            }
         }
     }
+
+    // ================= ATUALIZAÇÃO DE STATUS =================
+
+    private void AtualizarStatusDinamicos()
+    {
+        // Atualiza alcance caso tenha mudado
+        if (alcance != ultimoAlcance)
+        {
+            // Atualiza collider
+            if (colliderRange != null)
+                colliderRange.radius = alcance;
+
+            // Atualiza sprite
+            AtualizarRangeVisual();
+
+            // Detecta inimigos já dentro da nova range
+            DetectarInimigosDentroDoRange();
+
+            ultimoAlcance = alcance;
+        }
+    }
+
+    // ================= GETTERS/SETTERS =================
 
     public void DefinirAlcance(float novoAlcance)
     {
         alcance = novoAlcance;
-        AtualizarRangeVisual();
-        ultimoAlcance = alcance;
+        AtualizarStatusDinamicos();
+    }
+
+    public void DefinirDano(float novoDano)
+    {
+        dano = novoDano;
+    }
+
+    public void DefinirTempoEntreAtaques(float novoTempo)
+    {
+        tempoEntreAtaques = novoTempo;
     }
 
     public string GetNome() => nomePersonagem;
