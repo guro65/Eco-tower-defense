@@ -18,21 +18,34 @@ public class SelecionadorGlobal : MonoBehaviour
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             Vector2 posicaoMouse = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-            RaycastHit2D hit = Physics2D.Raycast(posicaoMouse, Vector2.zero);
 
-            if (hit.collider != null)
+            // ✅ Raycast que retorna TODOS os colliders no ponto
+            RaycastHit2D[] hits = Physics2D.RaycastAll(posicaoMouse, Vector2.zero);
+
+            Personagem personagemEncontrado = null;
+
+            // Procura por BoxCollider2D com tag "Personagem"
+            foreach (RaycastHit2D hit in hits)
             {
-                // 🔹 Somente pega o Personagem se estiver no mesmo GameObject
-                Personagem personagem = hit.collider.GetComponent<Personagem>();
+                if (hit.collider != null && hit.collider is BoxCollider2D)
+                {
+                    // ✅ Verifica se tem a tag "Personagem"
+                    if (hit.collider.gameObject.CompareTag("Personagem"))
+                    {
+                        Personagem personagem = hit.collider.GetComponent<Personagem>();
 
-                if (personagem != null)
-                {
-                    personagem.Selecionar();
+                        if (personagem != null)
+                        {
+                            personagemEncontrado = personagem;
+                            break; // Para no primeiro encontrado
+                        }
+                    }
                 }
-                else
-                {
-                    Personagem.DesselecionarAtual();
-                }
+            }
+
+            if (personagemEncontrado != null)
+            {
+                personagemEncontrado.Selecionar();
             }
             else
             {

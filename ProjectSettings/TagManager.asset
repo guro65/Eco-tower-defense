@@ -5,14 +5,15 @@ TagManager:
   serializedVersion: 3
   tags:
   - RangeVisual
+  - Personagem
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Personagem
   - Water
   - UI
-  - 
+  - RangeDetect
   - 
   - 
   - 
