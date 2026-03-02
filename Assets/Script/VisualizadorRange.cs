@@ -80,7 +80,6 @@ public class VisualizadorRange : MonoBehaviour
         }
     }
 
-    // ========== OBTER RAIO MÁXIMO ==========
     /// <summary>
     /// Obtém o raio do CircleCollider2D para respeitar o limite da range
     /// </summary>
@@ -93,7 +92,6 @@ public class VisualizadorRange : MonoBehaviour
         return personagem.GetAlcance();
     }
 
-    // ========== FULL AOE ==========
     private void DesenharFullAOE()
     {
         lineRenderer.enabled = true;
@@ -115,7 +113,6 @@ public class VisualizadorRange : MonoBehaviour
         lineRenderer.endColor = corFullAOE;
     }
 
-    // ========== CONE ==========
     private void DesenharCone()
     {
         lineRenderer.enabled = true;
@@ -143,7 +140,6 @@ public class VisualizadorRange : MonoBehaviour
         lineRenderer.endColor = corCone;
     }
 
-    // ========== BOLA AOE ==========
     private void DesenharBolaAOE()
     {
         lineRenderer.enabled = true;
@@ -170,7 +166,6 @@ public class VisualizadorRange : MonoBehaviour
         lineRenderer.endColor = corBolaAOE;
     }
 
-    // ========== ÚNICO ==========
     private void DesenharUnico()
     {
         lineRenderer.enabled = true;
@@ -185,7 +180,6 @@ public class VisualizadorRange : MonoBehaviour
         lineRenderer.endColor = corUnico;
     }
 
-    // ========== CÁLCULO DE ÂNGULO PARA INIMIGO ==========
     private void CalcularAnguloParaInimigo()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(personagem.transform.position, ObtenerRaioMaximo());

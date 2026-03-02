@@ -4,7 +4,6 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class Personagem : MonoBehaviour
 {
-    // ================= ENUM DE TIPO DE RANGE =================
     public enum TipoRange
     {
         FullAOE,    // Toda a área - todos tomam dano
@@ -78,7 +77,6 @@ public class Personagem : MonoBehaviour
         AtualizarBolasAOE(); // Para tipo BolaAOE
     }
 
-    // ================= ATAQUE =================
 
     private void TentarAtacarTodos()
     {
@@ -99,7 +97,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ========== FULL AOE ==========
     private void AtacarFullAOE()
     {
         List<Inimigo> inimigosParaAtacar = new List<Inimigo>(inimigosCooldown.Keys);
@@ -121,7 +118,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ========== CONE ==========
     private void AtacarCone()
     {
         List<Inimigo> inimigosParaAtacar = new List<Inimigo>(inimigosCooldown.Keys);
@@ -143,7 +139,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ========== BOLA AOE ==========
     private void AtacarBolaAOE()
     {
         List<Inimigo> inimigosParaAtacar = new List<Inimigo>(inimigosCooldown.Keys);
@@ -186,7 +181,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ========== ATAQUE ÚNICO ==========
     private void AtacarUnico()
     {
         // Se o alvo atual é nulo ou morreu, busca o mais próximo
@@ -221,7 +215,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ================= VERIFICAÇÕES DE ÁREA =================
 
     /// <summary>
     /// Verifica se o inimigo está dentro do alcance máximo
@@ -281,7 +274,6 @@ public class Personagem : MonoBehaviour
         return inimigoMaisProximo;
     }
 
-    // ========== UTILITÁRIOS ==========
 
     private void Atacar(Inimigo inimigo)
     {
@@ -314,7 +306,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ================= DETECÇÃO =================
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -334,7 +325,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ================= SELEÇÃO =================
 
     public void Selecionar()
     {
@@ -367,7 +357,6 @@ public class Personagem : MonoBehaviour
             personagemSelecionado.Desselecionar();
     }
 
-    // ================= RANGE VISUAL =================
 
     private void EncontrarRangeDoFilho()
     {
@@ -393,7 +382,6 @@ public class Personagem : MonoBehaviour
         rangeSprite.transform.localScale = new Vector3(escalaFinal, escalaFinal, 1f);
     }
 
-    // ================= DETECÇÃO DINÂMICA DE INIMIGOS =================
 
     private void DetectarInimigosDentroDoRange()
     {
@@ -408,7 +396,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ================= ATUALIZAÇÃO DE STATUS =================
 
     private void AtualizarStatusDinamicos()
     {
@@ -424,7 +411,6 @@ public class Personagem : MonoBehaviour
         }
     }
 
-    // ================= GETTERS/SETTERS =================
 
     public void DefinirAlcance(float novoAlcance)
     {
