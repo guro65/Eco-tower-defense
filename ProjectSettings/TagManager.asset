@@ -6,6 +6,7 @@ TagManager:
   tags:
   - RangeVisual
   - Personagem
+  - Inimigo
   layers:
   - Default
   - TransparentFX

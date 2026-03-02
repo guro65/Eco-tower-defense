@@ -21,8 +21,8 @@ public class Inimigo : MonoBehaviour
     public List<TipoInimigo> tipos = new List<TipoInimigo>();
 
     [Header("Vida")]
-    public float vidaInicial = 100f;    // Vida de início do inimigo
-    public float vidaAtual = 100f;      // Vida atual durante o jogo, visível no Inspector
+    public float vidaInicial = 100f;
+    public float vidaAtual = 100f;
 
     [Header("Movimento")]
     public float velocidadeBase = 3f;
@@ -40,8 +40,12 @@ public class Inimigo : MonoBehaviour
     public int quantidadeEscudos = 3;
     private int escudosAtuais;
 
+    [Header("Aparência")]
+    [SerializeField] private List<Sprite> spritesPossiveis = new List<Sprite>();
+    [SerializeField] private SpriteRenderer spriteRenderer;
+
     [Header("Caminho")]
-    [SerializeField] private Caminho caminho;
+    public Caminho caminho;
     private int indiceAtual = 0;
     private float velocidadeFinal;
 
@@ -54,10 +58,17 @@ public class Inimigo : MonoBehaviour
     [SerializeField] private Transform canvasUI;
     private Camera cam;
 
+    private bool estaVivo = true;
+
     private void Awake()
     {
         if (tipos.Count == 0)
             tipos.Add(TipoInimigo.Normal);
+
+        gameObject.tag = "Inimigo";
+
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Start()
@@ -72,7 +83,7 @@ public class Inimigo : MonoBehaviour
 
         barraEscudo.SetActive(tipos.Contains(TipoInimigo.Blindado));
 
-        vidaAtual = vidaInicial; // inicia com vida inicial
+        vidaAtual = vidaInicial;
         AtualizarUI();
 
         if (caminho != null && caminho.Pontos.Length > 0)
@@ -81,16 +92,36 @@ public class Inimigo : MonoBehaviour
 
     private void Update()
     {
-        Mover();
-        AplicarRegeneracao();
-        RotacionarUI();
+        if (estaVivo)
+        {
+            Mover();
+            AplicarRegeneracao();
+            RotacionarUI();
+        }
+    }
+
+    // ================= CONFIGURAÇÃO ALEATÓRIA (CHAMADA AO SPAWNAR) =================
+
+    public void ConfigurarAparenciaEVida()
+    {
+        // Sorteia sprite aleatório
+        if (spritesPossiveis != null && spritesPossiveis.Count > 0 && spriteRenderer != null)
+        {
+            spriteRenderer.sprite = spritesPossiveis[Random.Range(0, spritesPossiveis.Count)];
+        }
+
+        // Aplica multiplicador de vida baseado na onda
+        vidaInicial = vidaInicial * SistemaDeOndas.multiplicadorVidaInimigo;
+        vidaAtual = vidaInicial;
+
+        AtualizarUI();
     }
 
     // ================= VIDA =================
 
     public void ReceberDano(float dano)
     {
-        if (vidaAtual <= 0)
+        if (vidaAtual <= 0 || !estaVivo)
             return;
 
         // 🛡️ Escudo
@@ -114,17 +145,30 @@ public class Inimigo : MonoBehaviour
 
         if (vidaAtual <= 0)
         {
-            Destroy(gameObject);
+            Morrer();
         }
     }
 
     private void AplicarRegeneracao()
     {
-        if (tipos.Contains(TipoInimigo.Regenerador) && vidaAtual > 0)
+        if (tipos.Contains(TipoInimigo.Regenerador) && vidaAtual > 0 && estaVivo)
         {
             vidaAtual = Mathf.Clamp(vidaAtual + regeneracaoPorSegundo * Time.deltaTime, 0, vidaInicial);
             AtualizarUI();
         }
+    }
+
+    private void Morrer()
+    {
+        estaVivo = false;
+
+        if (SistemaDeOndas.instancia != null)
+        {
+            SistemaDeOndas.instancia.RegistrarInimigoDerrotado();
+        }
+
+        Debug.Log(nomeInimigo + " foi derrotado!");
+        Destroy(gameObject);
     }
 
     // ================= MOVIMENTO =================
@@ -142,8 +186,29 @@ public class Inimigo : MonoBehaviour
         {
             indiceAtual++;
             if (indiceAtual >= caminho.Pontos.Length)
-                Destroy(gameObject);
+            {
+                ChegouNaBase();
+            }
         }
+    }
+
+    private void ChegouNaBase()
+    {
+        estaVivo = false;
+
+        if (SistemaDeOndas.instancia != null)
+        {
+            SistemaDeOndas.instancia.RegistrarInimigoDerrotado();
+        }
+
+        Caminho caminhoScript = FindObjectOfType<Caminho>();
+        if (caminhoScript != null)
+        {
+            caminhoScript.PerdidaVidaBase(1);
+        }
+
+        Debug.Log(nomeInimigo + " chegou na base!");
+        Destroy(gameObject);
     }
 
     // ================= UI =================
@@ -176,4 +241,9 @@ public class Inimigo : MonoBehaviour
         if (canvasUI != null && cam != null)
             canvasUI.forward = cam.transform.forward;
     }
+
+    public float GetVida() => vidaAtual;
+    public float GetVidaMaxima() => vidaInicial;
+    public bool EstaVivo() => estaVivo;
+    public string GetNome() => nomeInimigo;
 }
